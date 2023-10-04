@@ -77,10 +77,12 @@ class BingTranslator:
         trans_rsp = requests.post(url=post_url, data=data, headers=head)
         if trans_rsp is not None and trans_rsp.status_code == 200:
             trans_json = json.loads(trans_rsp.text)
-            if trans_json is not None and len(trans_json) > 0:
-                translations = trans_json[0]['translations']
-                if translations is not None and len(translations) > 0:
+            try:
+                if trans_json is not None and len(trans_json) > 0:
+                    translations = trans_json[0]['translations']
                     return translations[0]['text']
+            except KeyError:
+                print("get text from translator failed!")
         # 失败了，置所有KeyID都为空，为下次准备
         self.clear_all_id()
         raise RuntimeError('bing translate failed!')
