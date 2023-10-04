@@ -55,7 +55,6 @@ class BingTranslator:
         return True
 
     def clear_all_id(self):
-        self.HOST = ''
         self.ig = ''
         self.key = ''
         self.token = ''
