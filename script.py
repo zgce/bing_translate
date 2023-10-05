@@ -6,7 +6,7 @@ import re
 from bs4 import BeautifulSoup
 import urllib
 import json
-
+import time
 
 class BingTranslator:
     HOST: str = None
@@ -14,6 +14,7 @@ class BingTranslator:
     key: str = None
     token: str = None
     iid: str = None
+    time_stamp: int = 0
 
     def __int__(self):
         pass
@@ -40,8 +41,16 @@ class BingTranslator:
             if rich_tta_elm is not None:
                 self.iid = rich_tta_elm.get('data-iid')
 
+        self.time_stamp = int(time.time())
+
     def check_all_id(self):
+        now = int(time.time())
+        if (now - self.time_stamp) > 600:
+            print("bing id overtime, request_all_id again")
+            self.request_all_id()
+
         if not self.do_check_all_id():
+            print("bing id invalid, request_all_id again")
             self.request_all_id()
 
         if not self.do_check_all_id():
@@ -75,13 +84,15 @@ class BingTranslator:
 
         trans_rsp = requests.post(url=post_url, data=data, headers=head)
         if trans_rsp is not None and trans_rsp.status_code == 200:
-            trans_json = json.loads(trans_rsp.text)
             try:
+                trans_json = json.loads(trans_rsp.text)
                 if trans_json is not None and len(trans_json) > 0:
                     translations = trans_json[0]['translations']
-                    return translations[0]['text']
+                    if translations is not None and len(translations) > 0:
+                        return translations[0]['text']
             except KeyError:
-                print("get text from translator failed!")
+                print("error: get translation text failed!")
+
         # 失败了，置所有KeyID都为空，为下次准备
         self.clear_all_id()
         raise RuntimeError('bing translate failed!')
@@ -130,9 +141,9 @@ def output_modifier(string):
 
     trans_str = bing_translator.translator(text=string, src_lang='en', dst_lang=params['language string'])
     if not params['keep_eng']:
-        return html.escape(trans_str)
+        return trans_str
     else:
-        return string +"\n----------\n" + html.escape(trans_str)
+        return string +"\n----------\n" + trans_str
 
 
 def bot_prefix_modifier(string):
